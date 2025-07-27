@@ -1,0 +1,108 @@
+# YouTube to MP3 Downloader for Google Colab
+
+# Install required packages
+!pip install yt-dlp
+
+import os
+import yt_dlp
+from pathlib import Path
+
+def download_youtube_to_mp3(url, output_dir="output"):
+    """
+    Download YouTube video and convert to MP3
+    
+    Args:
+        url (str): YouTube video URL
+        output_dir (str): Directory to save the MP3 file
+    """
+    
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Configure yt-dlp options
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': f'{output_dir}/%(title)s.%(ext)s',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'postprocessor_args': [
+            '-ar', '44100'
+        ],
+        'prefer_ffmpeg': True,
+    }
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Get video info
+            info = ydl.extract_info(url, download=False)
+            title = info.get('title', 'Unknown')
+            duration = info.get('duration', 0)
+            
+            print(f"Title: {title}")
+            print(f"Duration: {duration//60}:{duration%60:02d}")
+            print("Downloading and converting...")
+            
+            # Download and convert
+            ydl.download([url])
+            
+            print(f"✅ Successfully downloaded and converted to MP3!")
+            print(f"📁 Saved in: {output_dir}/")
+            
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+
+def download_multiple_videos(urls, output_dir="output"):
+    """
+    Download multiple YouTube videos and convert to MP3
+    
+    Args:
+        urls (list): List of YouTube video URLs
+        output_dir (str): Directory to save the MP3 files
+    """
+    
+    print(f"📥 Downloading {len(urls)} videos...")
+    
+    for i, url in enumerate(urls, 1):
+        print(f"\n[{i}/{len(urls)}] Processing: {url}")
+        download_youtube_to_mp3(url, output_dir)
+
+# Example usage:
+
+# Single video download
+youtube_url = "https://www.youtube.com/watch?v=2F8puRkwWWw&t=110s"  # Replace with your URL
+download_youtube_to_mp3(youtube_url, "output")
+
+# # Multiple videos download
+# urls = [
+#     "https://www.youtube.com/watch?v=dQw4w9WgXcQ",  # Replace with your URLs
+#     "https://www.youtube.com/watch?v=VIDEO_ID_2",
+#     # Add more URLs as needed
+# ]
+# # download_multiple_videos(urls, "output")
+
+# # List downloaded files
+# print("\n📂 Files in output directory:")
+# output_path = Path("output")
+# if output_path.exists():
+#     for file in output_path.glob("*.mp3"):
+#         size_mb = file.stat().st_size / (1024 * 1024)
+#         print(f"  • {file.name} ({size_mb:.1f} MB)")
+# else:
+#     print("  No files found.")
+
+# # Optional: Download to Google Drive (if mounted)
+# def download_to_drive(url, drive_path="/content/drive/MyDrive/YouTube_MP3"):
+#     """
+#     Download directly to Google Drive (requires mounting)
+#     """
+#     # Mount Google Drive first
+#     from google.colab import drive
+#     drive.mount('/content/drive')
+    
+#     download_youtube_to_mp3(url, drive_path)
+
+# # Uncomment to use Google Drive:
+# # download_to_drive(youtube_url)
